@@ -28,8 +28,10 @@ Chạy service và gọi `/ask` vài lần. Dán một dòng log JSON bạn thu 
 nêu **hai** việc bạn làm được với dòng log đó mà `print("đã trả lời xong")`
 không làm được.
 
-Ví dụ dòng log JSON thu được:
-`{"event": "ask_completed", "level": "info", "timestamp": "2026-09-29T04:10:00.123456+00:00", "user_id": "sv-test", "tokens_in": 15, "tokens_out": 42, "cost_usd": 0.00012}`
+Dòng log JSON thực tế thu được từ stdout khi gọi `/ask`:
+```json
+{"event": "ask_completed", "level": "info", "timestamp": "2026-09-29T04:36:53.205408+00:00", "user_id": "sv-test", "tokens_in": 1, "tokens_out": 33, "cost_usd": 1.995e-05}
+```
 
 Hai việc làm được với log JSON có cấu trúc (Structured Logging) mà `print("đã trả lời xong")` không làm được:
 1. **Lọc và truy vấn nâng cao theo trường (Querying & Filtering)**: Hệ thống giám sát log tập trung (như Datadog, CloudWatch, Loki, Elasticsearch) có thể bóc tách JSON tự động để thực hiện lọc các request của một `user_id` cụ thể, hoặc lọc ra các request có `cost_usd > 0.05` hay phát sinh trong một khoảng `timestamp` xác định. Với `print()` chuỗi văn bản thuần túy, log parser không thể bóc tách chính xác các trường số liệu này nếu không dùng regex phức tạp và dễ vỡ.
@@ -49,12 +51,12 @@ docker images | grep agent
 
 | Bản | Dung lượng |
 |-----|-----------|
-| 1 stage (bản đầu) | ~1.02 GB |
-| Multi-stage | ~185 MB |
+| 1 stage (bản đầu) | 1.02 GB |
+| Multi-stage | 271 MB |
 
 Giải thích: phần dung lượng chênh lệch đó là những gì?
 
-Phần dung lượng chênh lệch (~800MB+) gồm có:
+Phần dung lượng chênh lệch (~749 MB) gồm có:
 1. **Hệ điều hành nền và công cụ hệ thống không cần thiết**: Base image `python:3.11` đầy đủ dựa trên Debian bản chuẩn chứa toàn bộ compiler (gcc, g++), make, header files (`build-essential`), thư viện đồ họa, tài liệu man pages, và hàng trăm gói tiện ích hệ thống. Trong khi đó, `python:3.11-slim` đã được lược bỏ tối đa các gói này, chỉ giữ lại runtime tối thiểu cần để chạy Python.
 2. **Rác phát sinh trong quá trình build**: Ở bản 1-stage, quá trình `pip install` để lại cache wheels, build artifacts, bytecode tạm thời và các công cụ đóng gói. Ở bản Multi-stage, toàn bộ dependency được cài đặt vào thư mục đích (`/install`) trong stage `builder`, stage `runtime` chỉ copy phần kết quả thư viện cần dùng sang (`COPY --from=builder /install /usr/local`), loại bỏ hoàn toàn các layer trung gian, cache của pip và các file tạm.
 

@@ -72,25 +72,33 @@ done; echo
 
 Dán output của các lệnh trên vào đây:
 
-```
-# 1. /health
+```http
+# 1. Liveness — mong đợi 200 {"status":"ok"}
 HTTP/1.1 200 OK
+content-type: application/json
+
 {"status":"ok","service":"day12-agent","version":"1.0.0"}
 
-# 2. /ready
+# 2. Readiness — mong đợi 200 {"status":"ready"} (đã nối được Redis)
 HTTP/1.1 200 OK
+content-type: application/json
+
 {"status":"ready","redis":true}
 
-# 3. /ask không có API key
+# 3. Không có API key — mong đợi 401
 HTTP/1.1 401 Unauthorized
+content-type: application/json
+
 {"detail":"invalid or missing API key"}
 
-# 4. /ask có API key
+# 4. Có API key — mong đợi 200 kèm câu trả lời
 HTTP/1.1 200 OK
-{"answer":"Deploy là quá trình đưa phần mềm lên môi trường chạy thực tế...","user_id":"sv-test","history_length":0,"cost_usd":0.0001,"tokens":{"in":10,"out":25}}
+content-type: application/json
 
-# 5. Rate limit
-200 200 200 200 200 200 200 200 200 200 429 429 429 429 429
+{"answer":"Câu hỏi hay. Deploy là gì thường được giải quyết bằng cách chuẩn hóa môi trường chạy: cùng một image chạy giống nhau ở laptop và trên cloud.","user_id":"sv-test","history_length":0,"cost_usd":2.145e-05,"tokens":{"in":3,"out":35}}
+
+# 5. Rate limit — gọi 15 lần, những lần cuối phải trả 429
+200 200 200 200 200 200 200 200 200 429 429 429 429 429 429
 ```
 
 ## Ảnh Chụp Màn Hình
